@@ -12,6 +12,10 @@ df['Critic Score'] = pd.to_numeric(df['Critic Score'], errors='coerce').fillna(0
 # Add an 'Average Score' column (average of Audience and Critic Scores)
 df['Average Score'] = (df['Audience Score'] + df['Critic Score']) / 2
 
+# Handle potential mixed types in the 'Director' column
+if 'Director' in df.columns:
+    df['Director'] = df['Director'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
+
 # Style adjustments for table display
 st.markdown("""
     <style>
@@ -34,24 +38,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Title and description
-st.title("Most Popular / Trending Movie Details Scraped from Rotten Tomatoes")
+st.title("Popular and trending movies scraped from Rotten Tomatoes")
 st.markdown("Explore movies, filter by genre, search for specific movies, and see the top trending ones with high scores!")
 
-# Flatten the genre list and extract unique genres
+# Filter by genre (assuming you have a Genre column)
 if 'Genres' in df.columns:
     all_genres = set()
     for genres in df['Genres']:
         if isinstance(genres, list):
-            all_genres.update(genres)  # Flatten the lists of genres
+            all_genres.update(genres)
         else:
-            all_genres.add(genres)  # For single genres
+            all_genres.add(genres)
 
     genre_options = sorted(all_genres)
     selected_genres = st.multiselect("Filter by Genre", options=genre_options, default=genre_options)
 else:
     selected_genres = []
 
-# Apply genre filter if 'Genre' column exists
+# Apply genre filter if 'Genres' column exists
 if 'Genres' in df.columns and selected_genres:
     def filter_by_genre(genres):
         if isinstance(genres, list):
@@ -69,13 +73,7 @@ st.dataframe(filtered_df, height=600)  # Increased table height for better displ
 # Trending movies (with Average Score higher than 90)
 trending_genres = df[df['Average Score'] > 90]
 
-# Show trending movies in a chart
-st.subheader("Trending Genres (Average Score > 90)")
-if not trending_genres.empty:
-    st.bar_chart(trending_genres[['Movie Name']].set_index('Movie Name'))
-else:
-    st.write("No trending genres with an average score higher than 90.")
 
 # Display the DataFrame with Average Score included
-st.subheader("Movie Data with Average Score")
-st.dataframe(df, height=600)
+st.subheader("Trending movies (with Average Score higher than 90")
+st.dataframe(trending_genres, height=600)
