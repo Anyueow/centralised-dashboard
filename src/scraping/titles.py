@@ -8,10 +8,9 @@ url = "https://www.rottentomatoes.com/browse/movies_at_home/critics:certified_fr
 response = requests.get(url)
 soup = BeautifulSoup(response.text, 'html.parser')
 
-
 # print(type(soup))
 
-title=[]
+title = []
 
 # Extract movie titles
 for movie in soup.find_all('span', {'data-qa': 'discovery-media-list-item-title'}):
@@ -19,4 +18,3 @@ for movie in soup.find_all('span', {'data-qa': 'discovery-media-list-item-title'
     title.append(t)
 # storin
 print(title)
-

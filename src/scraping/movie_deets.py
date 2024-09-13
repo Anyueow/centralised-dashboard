@@ -1,20 +1,19 @@
+import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 import rottentomatoes as rt
-from rottentomatoes import audience_score
+from bs4 import BeautifulSoup
 
 from src.scraping.titles import title
-import pandas as pd
 
 # List to hold all movie data
 movie_data = []
+
 
 def a_error(movie_title):
     movie_title = rt.audience_score()
     if movie_title == "error detected":
         raise ValueError("invalid literal for int() with base 10: ''")
     return 'NA'  # Example score
-
 
 
 for t in title:
@@ -24,7 +23,7 @@ for t in title:
     try:
         audience_score = rt.audience_score(test)
     except Exception as e:
-        audience_score = "N/A"
+        audience_score = "N/AA"
         print(f"Error fetching audience score for {test}: {e}")
 
     try:
@@ -38,11 +37,9 @@ for t in title:
     # Using an f-string to insert the variable into the URL
     url = f"https://www.rottentomatoes.com/m/{test}#media-info"
 
-
-
     # Fetch the page content
     response = requests.get(url)
-    soup2= BeautifulSoup(response.text, 'html.parser')
+    soup2 = BeautifulSoup(response.text, 'html.parser')
 
     # Extracting the required details
     try:
@@ -97,7 +94,6 @@ for t in title:
         "Runtime": runtime,
         "Box Office": box_office
     })
-
 
 # Creating a DataFrame from the movie data
 df = pd.DataFrame(movie_data)
