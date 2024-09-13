@@ -16,5 +16,3 @@ title = []
 for movie in soup.find_all('span', {'data-qa': 'discovery-media-list-item-title'}):
     t = movie.get_text(strip=True)
     title.append(t)
-# storin
-print(title)

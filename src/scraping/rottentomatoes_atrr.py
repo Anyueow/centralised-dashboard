@@ -11,3 +11,5 @@ urlx = f"https://www.rottentomatoes.com/m/{test}#media-info"
 
 print(urlx)
 print(weighted_score)
+
+print(rt.directors(test))
