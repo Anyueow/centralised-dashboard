@@ -58,12 +58,3 @@ def visualize_trends(df):
         figures.append(fig)
 
     return figures
-
-df = get_trends(['Beetlejuice', 'Halloween'])
-
-# Create visualizations
-trend_figures = visualize_trends(df)
-
-# Display or save each figure
-for i, fig in enumerate(trend_figures):
-    fig.show()

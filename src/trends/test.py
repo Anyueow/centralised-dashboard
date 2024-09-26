@@ -51,15 +51,3 @@ def get_trends(input_data, column_name=None, timeframe='today 1-m'):
 
 # Assuming you have a dataframe named 'movies_df' with columns 'movie_name' and 'genre'
 # Example usage:
-df = pd.DataFrame({'Movies': ['Beetlejuice', 'Halloween']})
-movie_trends = get_trends(df, 'Movies')
-# genre_trends = get_trends(movies_df, 'genre')
-
-# To combine both:
-# all_trends = pd.merge(movie_trends, genre_trends, on='date', how='outer')
-
-# Save to CSV
-# all_trends.to_csv('movie_and_genre_trends.csv')er_time())
-
-print("\nTrends from DataFrame input:")
-print(movie_trends.head())
