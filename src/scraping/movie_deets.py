@@ -3,7 +3,7 @@ import requests
 import rottentomatoes as rt
 from bs4 import BeautifulSoup
 
-from src.scraping.titles import title
+from src.scraping.titles import title, movie
 
 # List to hold all movie data
 movie_data = []
@@ -122,6 +122,6 @@ for t in title:
     })
 
 # Creating a DataFrame from the movie data
-df = pd.DataFrame(movie_data)
+movie_df = pd.DataFrame(movie_data)
 
 # print(df.head())
