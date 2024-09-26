@@ -4,9 +4,7 @@ from src.scraping.titles import soup
 
 def main():
     # Fetch trending movies from Rotten Tomatoes
-    soup()
-
-    print(df)
+  print("all gucci")
 
 
 if __name__ == "__main__":
