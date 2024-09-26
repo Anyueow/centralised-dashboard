@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from src.scraping.movie_deets import df
 from src.trends.test import get_trends
 from src.trends.trendviz import visualize_trends
