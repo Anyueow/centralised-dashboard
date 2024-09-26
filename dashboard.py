@@ -14,14 +14,17 @@ movie_df['Critic Score'] = pd.to_numeric(movie_df['Critic Score'], errors='coerc
 # Add an 'Average Score' column (average of Audience and Critic Scores)
 movie_df['Average Score'] = (movie_df['Audience Score'] + movie_df['Critic Score']) / 2
 
+# Convert 'Release Date (Streaming)' to datetime format
+movie_df['Release Date (Streaming)'] = pd.to_datetime(movie_df['Release Date (Streaming)'], errors='coerce')
+
 # Handle potential mixed types in the 'Director' column
 if 'Director' in movie_df.columns:
     movie_df['Director'] = movie_df['Director'].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
 
 # Title and description
-st.title("Popular and trending movies scraped from Rotten Tomatoes")
+st.title("Popular Movies Research Dashboard")
 st.markdown(
-    "Explore movies, filter by genre, search for specific movies, and see the top trending ones with high scores!")
+    "Made for Direct TV SEO Optimization project by Ananya Shah for Cartesian Inc.")
 
 # Filter by genre (assuming you have a Genre column)
 if 'Genres' in movie_df.columns:
@@ -37,7 +40,12 @@ if 'Genres' in movie_df.columns:
 else:
     selected_genres = []
 
-# Apply genre filter if 'Genres' column exists
+# Filter by Release Date (Streaming)
+st.markdown("### Filter by Release Date (Streaming)")
+start_date = st.date_input("Start Date", pd.to_datetime("2020-01-01"))
+end_date = st.date_input("End Date", pd.to_datetime("today"))
+
+# Apply genre and Release Date (Streaming) filter if 'Genres' and 'Release Date (Streaming)' columns exist
 if 'Genres' in movie_df.columns and selected_genres:
     def filter_by_genre(genres):
         if isinstance(genres, list):
@@ -48,6 +56,13 @@ if 'Genres' in movie_df.columns and selected_genres:
     filtered_df = movie_df[movie_df['Genres'].apply(filter_by_genre)]
 else:
     filtered_df = movie_df.copy()
+
+# Apply the Release Date (Streaming) filter
+if 'Release Date (Streaming)' in movie_df.columns:
+    filtered_df = filtered_df[
+        (filtered_df['Release Date (Streaming)'] >= pd.to_datetime(start_date)) &
+        (filtered_df['Release Date (Streaming)'] <= pd.to_datetime(end_date))
+        ]
 
 # Get trend data for movies in the filtered dataframe
 movies_to_search = filtered_df['Movie Name'].tolist()  # Assuming 'Movie Name' column exists in movie_df
@@ -61,26 +76,26 @@ st.subheader("Movies and Trends")
 
 for i, (index, row) in enumerate(filtered_df.iterrows()):
     # Create a block layout using columns
-    col1, col2, col3 = st.columns([2, 3, 2])
+    col1, col2 = st.columns([2, 3])  # Adjusted to two columns
 
-    # Movie name and director in the first column
+    # Movie name, synopsis, and director in the first column
     with col1:
         st.markdown(f"### {row['Movie Name']}")
         st.markdown(f"**Director**: {row['Director']}")
+        st.markdown(f"**Synopsis**: {row['Synopsis']}")  # Display synopsis
+        st.markdown(f"**Theater Release Date**: {row['Release Date (Theaters)']}")  # Display theater release date
+        st.markdown(
+            f"**Release Date (Streaming)**: {row['Release Date (Streaming)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Streaming)']) else 'N/A'}")  # Release Date (Streaming)
         st.markdown(f"**Average Score**: {row['Average Score']}")
         st.markdown(f"**Genres**: {', '.join(row['Genres']) if isinstance(row['Genres'], list) else row['Genres']}")
-
-    # Sentiment analysis and scores in the second column
-    with col2:
         st.markdown(f"**Audience Score**: {row['Audience Score']}")
         st.markdown(f"**Critic Score**: {row['Critic Score']}")
-        st.markdown(f"**Sentiment Analysis**: Positive")
-        st.markdown(f"**Trends**: See graph on the right.")
+        st.markdown(f"**Sentiment Analysis**: *...Feature Pending....*")
 
-    # Trend graph in the third column
-    with col3:
+    # Trend graph in the second column
+    with col2:
         if i < len(trend_figures):
-            st.plotly_chart(trend_figures[i], use_container_width=True)
+            st.plotly_chart(trend_figures[i], use_container_width=True)  # Display the plotly graph within the column
         else:
             st.markdown("No trend data available.")
 
@@ -93,25 +108,26 @@ trending_movies = movie_df[movie_df['Average Score'] > 90]
 
 # Display the trending movies in blocks as well
 for i, (index, row) in enumerate(trending_movies.iterrows()):
-    col1, col2, col3 = st.columns([2, 3, 2])
+    col1, col2 = st.columns([2, 3])  # Adjusted to two columns
 
-    # Movie name and director in the first column
+    # Movie name, synopsis, and director in the first column
     with col1:
         st.markdown(f"### {row['Movie Name']}")
         st.markdown(f"**Director**: {row['Director']}")
+        st.markdown(f"**Synopsis**: {row['Synopsis']}")  # Display synopsis
+        st.markdown(f"**Theater Release Date**: {row['Theater Release Date']}")  # Display theater release date
+        st.markdown(
+            f"**Release Date (Streaming)**: {row['Release Date (Streaming)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Streaming)']) else 'N/A'}")  # Release Date (Streaming)
         st.markdown(f"**Average Score**: {row['Average Score']}")
-
-    # Sentiment analysis and trends in the second column
-    with col2:
+        st.markdown(f"**Genres**: {', '.join(row['Genres']) if isinstance(row['Genres'], list) else row['Genres']}")
         st.markdown(f"**Audience Score**: {row['Audience Score']}")
         st.markdown(f"**Critic Score**: {row['Critic Score']}")
         st.markdown(f"**Sentiment Analysis**: Positive")
-        st.markdown(f"**Trends**: See graph on the right.")
 
-    # Trend graph in the third column
-    with col3:
+    # Trend graph in the second column
+    with col2:
         if i < len(trend_figures):
-            st.plotly_chart(trend_figures[i], use_container_width=True)
+            st.plotly_chart(trend_figures[i], use_container_width=True)  # Display the plotly graph within the column
         else:
             st.markdown("No trend data available.")
 
