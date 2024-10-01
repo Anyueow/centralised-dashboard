@@ -1,6 +1,3 @@
-# Scraped movies will be stored in this variable
-scraped_movies = None
-
 from src.scraping.MovieDataCollector import MovieDataCollector
 from src.scraping.MovieTitleScraper import MovieTitleScraper
 
@@ -9,20 +6,13 @@ def run_scraper():
     This function scrapes movie titles and URLs using the MovieTitleScraper class.
     Returns a list of scraped movies in the form of dictionaries (with title and URL).
     """
-    global scraped_movies  # Use global variable to store scraped movies
-
-    if scraped_movies is not None:
-        print("Using previously scraped movies.")
-        return scraped_movies
-
     source_url = "https://www.rottentomatoes.com/browse/movies_at_home/critics:certified_fresh~sort:popular"
     title_scraper = MovieTitleScraper(source_url)
 
     try:
         print("Scraping movie titles and URLs...")
         movies = title_scraper.scrape_titles()
-        print(f"Scraped {len(movies)} movies.")
-        scraped_movies = movies  # Store the scraped movies in the global variable
+
         return movies
     except Exception as e:
         print(f"Error scraping movie titles: {e}")
@@ -43,8 +33,18 @@ def run_scraper_details(movies):
 
             # Output the data to console or save it as needed
             print(movie_df.info())  # Display dataframe information
+            return movie_df  # Return the dataframe to be used later
 
         except Exception as e:
             print(f"Error collecting movie details: {e}")
+            return None
     else:
         print("No movies scraped.")
+        return None
+
+# Example usage:
+movies = run_scraper()  # Scrape movie titles and URLs
+if movies is not None:
+    movie_df = run_scraper_details(movies)  # Collect movie details
+else:
+    print("No movies scraped")

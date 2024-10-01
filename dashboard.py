@@ -1,143 +1,78 @@
 import streamlit as st
 import pandas as pd
-from src.scraping.run_scraper import run_scraper, run_scraper_details
-from src.trends.run_trends_and_viz import run_trends
 from src.trends.TrendVisualizer import TrendVisualizer
-
-
-# Use Streamlit's caching to avoid re-scraping and re-fetching the same data
-
-@st.cache_data
-def get_movie_data():
-    """
-    Scrape movie data and return a DataFrame. Cached to avoid redundant scraping.
-    """
-    movies = run_scraper()
-    run_scraper_details(movies)  # Populate details for the movies
-    movie_df = pd.DataFrame(movies)
-
-    # Print available columns for debugging
-    st.write("Available columns in movie_df:", movie_df.columns)
-
-    # Check if 'Audience Score' exists in the DataFrame
-    if 'Audience Score' not in movie_df.columns:
-        st.error("Audience Score column is missing. Ensure the scraping process populates this field.")
-        # If missing, create the column with default values (e.g., 0)
-        movie_df['Audience Score'] = 0
-
-    # Ensure 'Audience Score', 'Critic Score', and 'Average Score' are numeric
-    movie_df['Audience Score'] = pd.to_numeric(movie_df['Audience Score'], errors='coerce').fillna(0).astype(int)
-    movie_df['Critic Score'] = pd.to_numeric(movie_df['Critic Score'], errors='coerce').fillna(0).astype(int)
-    movie_df['Average Score'] = (movie_df['Audience Score'] + movie_df['Critic Score']) / 2
-
-    movie_df['Release Date (Streaming)'] = pd.to_datetime(movie_df['Release Date (Streaming)'], errors='coerce').fillna(pd.NaT)
-    movie_df['Release Date (Theaters)'] = pd.to_datetime(movie_df['Release Date (Theaters)'], errors='coerce').fillna(pd.NaT)
-
-    for col in ['Movie Name', 'Director', 'Synopsis', 'Genres']:
-        movie_df[col] = movie_df[col].fillna('N/A')
-
-    return movie_df
-
-
-
-
-@st.cache_data
-def get_trend_data(movie_titles):
-    """
-    Fetch Google Trends data for the given movie titles. Cached to avoid redundant fetching.
-    """
-    trends_df = run_trends(movie_titles)
-    return trends_df
-
-
-def filter_movie_data(movie_df, selected_genres, start_date, end_date):
-    """
-    Apply genre and date filters to the movie DataFrame.
-    """
-    if selected_genres:
-        filtered_df = movie_df[
-            movie_df['Genres'].apply(lambda genres: any(genre in genres for genre in selected_genres))]
-    else:
-        filtered_df = movie_df.copy()
-
-    filtered_df = filtered_df[
-        (filtered_df['Release Date (Streaming)'] >= pd.to_datetime(start_date)) &
-        (filtered_df['Release Date (Streaming)'] <= pd.to_datetime(end_date))
-        ]
-
-    return filtered_df
-
-
-def display_movie_data_and_trends(filtered_df, trend_figures):
-    """
-    Display the movie details and corresponding trend data side-by-side using Streamlit columns.
-    """
-    for i, (index, row) in enumerate(filtered_df.iterrows()):
-        col1, col2 = st.columns([2, 3])
-
-        # Movie Details in first column
-        with col1:
-            st.markdown(f"### {row['Movie Name']}")
-            st.markdown(f"**Director**: {row['Director']}")
-            st.markdown(f"**Synopsis**: {row['Synopsis']}")
-            st.markdown(f"**Genres**: {row['Genres']}")
-            st.markdown(
-                f"**Release Date (Theaters)**: {row['Release Date (Theaters)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Theaters)']) else 'N/A'}")
-            st.markdown(
-                f"**Release Date (Streaming)**: {row['Release Date (Streaming)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Streaming)']) else 'N/A'}")
-            st.markdown(f"**Audience Score**: {row['Audience Score']}")
-            st.markdown(f"**Critic Score**: {row['Critic Score']}")
-            st.markdown(f"**Average Score**: {row['Average Score']}")
-
-        # Trend Visualization in second column
-        with col2:
-            if i < len(trend_figures):
-                st.plotly_chart(trend_figures[i], use_container_width=True)
-            else:
-                st.markdown("No trend data available for this movie.")
-
-        # Divider between movies
-        st.markdown("---")
-
+from stlit.filters import filter_movie_data
+from stlit.movie_data import get_movie_data
+from stlit.trend_data import get_trend_data
 
 def main():
-    # Set page layout
+    # Set page layout for the Streamlit app
     st.set_page_config(layout="wide")
     st.title("Direct TV SEO Movie Research Dashboard")
-    st.markdown("By Ananya Shah for Cartesian Inc.")
+    st.markdown("View trending movies, their details, and Google Trends data side-by-side.")
 
-    # Step 1: Fetch movie data (cached)
+    # Fetch movie data (cached)
     movie_df = get_movie_data()
 
-    # Step 2: Genre and date filtering
-    all_genres = set(movie_df['Genres'].str.split(', ').sum())
-    selected_genres = st.multiselect("Filter by Genre", options=sorted(all_genres), default=sorted(all_genres))
+    # Add a search function to search across movie names, actors, genres, and directors
+    search_query = st.text_input("Search by Movie Name, Director, Actor, or Genre", "")
 
-    start_date = st.date_input("Start Date", pd.to_datetime("2020-01-01"))
-    end_date = st.date_input("End Date", pd.to_datetime("today"))
+    # Button to expand/collapse all rows
+    expand_all = st.button("Expand All")
+    collapse_all = st.button("Collapse All")
 
-    # Filter movie data based on user input
-    filtered_df = filter_movie_data(movie_df, selected_genres, start_date, end_date)
-
-    # Step 3: Fetch trends for filtered movies (cached)
-    movie_titles = filtered_df['Movie Name'].tolist()
-    trends_df = get_trend_data(movie_titles)
-
-    # Step 4: Visualize trends
-    if trends_df is not None:
-        visualizer = TrendVisualizer(trends_df)
-        trend_figures = visualizer.visualize_trends()
+    # Filter the DataFrame based on the search query
+    if search_query:
+        filtered_df = movie_df[
+            movie_df.apply(lambda row: search_query.lower() in str(row['Movie Name']).lower() or
+                                         search_query.lower() in str(row['Director']).lower() or
+                                         search_query.lower() in str(row['Genres']).lower(), axis=1)
+        ]
     else:
-        trend_figures = []
+        filtered_df = movie_df
 
-    # Step 5: Display movie details and trends
-    display_movie_data_and_trends(filtered_df, trend_figures)
+    # Fetch trends for the filtered movies (cached)
+    movie_titles = filtered_df['Movie Name'].tolist()
+    trend_figures = get_trend_data(movie_titles)  # Get the trend figures
 
-    # Trending Movies Section
-    st.subheader("Trending Movies (Average Score > 90)")
-    trending_movies = movie_df[movie_df['Average Score'] > 90]
-    display_movie_data_and_trends(trending_movies, trend_figures)
+    # Display movie details and trends
+    display_movies_with_trends(filtered_df, trend_figures, expand_all, collapse_all)
 
+# Function to display movies and their Google Trends data
+def display_movies_with_trends(filtered_df, trend_figures, expand_all, collapse_all):
+    """
+    Display movie information side-by-side with the Google Trends chart.
+    """
 
+    # Keep track of whether rows should be expanded or collapsed
+    expand_state = True if expand_all else False if collapse_all else True
+
+    for i, (index, row) in enumerate(filtered_df.iterrows(), 1):  # Add numbering (1, 2, 3, ...)
+        # Add a collapsible section for each movie
+        with st.expander(f"{i}. {row['Movie Name']}", expanded=expand_state):  # Expanded by default if expand_all
+            col1, col2 = st.columns([2, 3])
+
+            # Movie Information in first column
+            with col1:
+                st.markdown(f"### {row['Movie Name']}")
+                st.markdown(f"**Director**: {row['Director']}")
+                st.markdown(f"**Genres**: {', '.join(row['Genres']) if isinstance(row['Genres'], list) else row['Genres']}")
+                st.markdown(f"**Theater Release Date**: {row['Release Date (Theaters)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Theaters)']) else 'N/A'}")
+                st.markdown(f"**Release Date (Streaming)**: {row['Release Date (Streaming)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Streaming)']) else 'N/A'}")
+                st.markdown(f"**Audience Score**: {row['Audience Score']}")
+                st.markdown(f"**Critic Score**: {row['Critic Score']}")
+                st.markdown(f"**Average Score**: {row['Average Score']}")
+                st.markdown(f"**Sentiment Analysis**: *..........................Upcoming.........................................*")  # Placeholder for future sentiment analysis
+                st.markdown(f"**Actors**: *...Upcoming...*")  # Placeholder for actors
+                st.markdown(f"**Top Comment**: *...Upcoming...*")  # Placeholder for top comment
+
+            # Trend Graph in the second column
+            with col2:
+                if trend_figures and i-1 < len(trend_figures):
+                    st.plotly_chart(trend_figures[i-1], use_container_width=True)  # Display the graph inline
+                else:
+                    st.markdown("No trend data available for this movie.")
+
+# Running the app
 if __name__ == "__main__":
     main()

@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+
 class MovieDataCollector:
     def __init__(self):
         self.movie_data = []
@@ -35,25 +36,32 @@ class MovieDataCollector:
                 "Runtime": self.get_runtime(soup),
                 "Box Office": self.get_box_office(soup)
             }
+
+            # Print the movie details for debugging
+            print(f"Scraped details for {title}: {movie_details}")
+
             self.movie_data.append(movie_details)
 
     def get_audience_score(self, soup):
         try:
-            return soup.find('rt-text', attrs={'slot': 'audienceScore'}).get_text(strip=True)
+            score = soup.find('rt-text', attrs={'slot': 'audienceScore'}).get_text(strip=True)
+            return score
         except Exception as e:
             print(f"Error fetching audience score: {e}")
             return "N/A"
 
     def get_critic_score(self, soup):
         try:
-            return soup.find('rt-text', attrs={'slot': 'criticsScore'}).get_text(strip=True)
+            score = soup.find('rt-text', attrs={'slot': 'criticsScore'}).get_text(strip=True)
+            return score
         except Exception as e:
             print(f"Error fetching critic score: {e}")
             return "N/A"
 
     def get_synopsis(self, soup):
         try:
-            synopsis = soup.find('div', class_='synopsis-wrap').find('rt-text').find_next_sibling('rt-text').get_text(strip=True)
+            synopsis = soup.find('div', class_='synopsis-wrap').find('rt-text').find_next_sibling('rt-text').get_text(
+                strip=True)
             return synopsis
         except AttributeError:
             return "N/A"
@@ -74,14 +82,16 @@ class MovieDataCollector:
 
     def get_release_theatre(self, soup):
         try:
-            release_theatre = soup.find('rt-text', text='Release Date (Theaters)').find_next('rt-text').get_text(strip=True)
+            release_theatre = soup.find('rt-text', text='Release Date (Theaters)').find_next('rt-text').get_text(
+                strip=True)
             return release_theatre
         except AttributeError:
             return "N/A"
 
     def get_release_streaming(self, soup):
         try:
-            release_streaming = soup.find('rt-text', text='Release Date (Streaming)').find_next('rt-text').get_text(strip=True)
+            release_streaming = soup.find('rt-text', text='Release Date (Streaming)').find_next('rt-text').get_text(
+                strip=True)
             return release_streaming
         except AttributeError:
             return "N/A"
@@ -108,4 +118,6 @@ class MovieDataCollector:
             return "N/A"
 
     def to_dataframe(self):
+        # Before returning, print the full movie_data list for debugging
+        print(f"Collected movie data: {self.movie_data}")
         return pd.DataFrame(self.movie_data)

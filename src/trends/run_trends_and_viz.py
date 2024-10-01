@@ -1,8 +1,6 @@
 from src.trends.TrendVisualizer import TrendVisualizer
 from src.trends.Trends import PyTrendScraper
 
-
-
 def run_trends(movie_titles):
     """
     Fetch Google Trends data and visualize it for the provided movie titles.
@@ -20,11 +18,9 @@ def run_trends(movie_titles):
             visualizer = TrendVisualizer(df=trends_df)
             figures = visualizer.visualize_trends()
 
-            # Display the figures
-            for fig in figures:
-                fig.show()
+            # Return the figures to be rendered in Streamlit
+            return figures
 
     except Exception as e:
         print(f"Error fetching Google Trends data: {e}")
-        return
-
+        return None
