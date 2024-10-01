@@ -13,21 +13,28 @@ def main():
 
     # Fetch movie data (cached)
     movie_df = get_movie_data()
+    search_query = st.text_input("Search by Movie Name, Director, Actor, or Genre", "")
 
-    # Create columns with a smaller width ratio for side-by-side buttons
-    col1, col2, col3 = st.columns([2, 1, 1])  # Adjust the width ratio
 
-    # Display search bar in the first column (taking up more space)
-    with col1:
-        search_query = st.text_input("Search by Movie Name, Director, Actor, or Genre", "")
+    # Create three columns with adjusted width to center the elements
+    col2, col3, cc = st.columns([0.5, 0.5, 5])  # Adjusted the width for better centering
 
-    # Display "Expand All" button in the second column
+    with cc: 
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+
+
+
+    # Center the "Expand All" button in the second column
     with col2:
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
         expand_all = st.button("Expand All")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # Display "Collapse All" button in the third column
+    # Center the "Collapse All" button in the third column
     with col3:
+        st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
         collapse_all = st.button("Collapse All")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Filter the DataFrame based on the search query
     if search_query:
