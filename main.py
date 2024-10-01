@@ -1,11 +1,10 @@
-from src.scraping.movie_deets import df
-from src.scraping.titles import soup
+from src.scraping.run_scraper import run_scraper, run_scraper_details
+from src.trends.run_trends_and_viz import run_trends
 
 
 def main():
-    # Fetch trending movies from Rotten Tomatoes
-  print("all gucci")
-
+    # Step 1: Scrape movie titles and URLs or use the previously scraped data
+    print("run by run")
 
 if __name__ == "__main__":
     main()
