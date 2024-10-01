@@ -71,13 +71,26 @@ def display_movies_with_trends(filtered_df, trend_figures, expand_all, collapse_
             with col1:
                 st.markdown(f"### {row['Movie Name']}")
                 st.markdown(f"**Director**: {row['Director']}")
-                st.markdown(f"**Genres**: {', '.join(row['Genres']) if isinstance(row['Genres'], list) else row['Genres']}")
-                st.markdown(f"**Theater Release Date**: {row['Release Date (Theaters)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Theaters)']) else 'N/A'}")
-                st.markdown(f"**Release Date (Streaming)**: {row['Release Date (Streaming)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Streaming)']) else 'N/A'}")
-                st.markdown(f"**Audience Score**: {row['Audience Score']}")
-                st.markdown(f"**Critic Score**: {row['Critic Score']}")
-                st.markdown(f"**Average Score**: {row['Average Score']}")
-                st.markdown(f"**Sentiment Analysis**: *..........................Upcoming.........................................*")  # Placeholder for future sentiment analysis
+                st.markdown(
+                    f"**Genres**: {', '.join(row['Genres']) if isinstance(row['Genres'], list) else row['Genres']}")
+
+                # Add Synopsis
+                st.markdown(
+                    f"**Synopsis**: {row['Synopsis'] if row['Synopsis'] != 'N/A' else 'No synopsis available.'}")
+
+                # Add Rating
+                st.markdown(f"**Rating**: {row['Rating'] if row['Rating'] != 'N/A' else 'No rating available.'}")
+
+                st.markdown(
+                    f"**Theater Release Date**: {row['Release Date (Theaters)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Theaters)']) else 'N/A'}")
+                st.markdown(
+                    f"**Release Date (Streaming)**: {row['Release Date (Streaming)'].strftime('%Y-%m-%d') if pd.notnull(row['Release Date (Streaming)']) else 'N/A'}")
+
+                # Add Runtime
+                st.markdown(f"**Runtime**: {row['Runtime'] if row['Runtime'] != 'N/A' else 'No runtime available.'}")
+
+                st.markdown(
+                    f"**Sentiment Analysis**: *..........................Upcoming.........................................*")  # Placeholder for future sentiment analysis
                 st.markdown(f"**Actors**: *...Upcoming...*")  # Placeholder for actors
                 st.markdown(f"**Top Comment**: *...Upcoming...*")  # Placeholder for top comment
 

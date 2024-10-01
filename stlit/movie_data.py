@@ -13,9 +13,7 @@ def get_movie_data():
     movie_df = pd.DataFrame(details)
 
     # Ensure 'Audience Score', 'Critic Score', and 'Average Score' are numeric
-    movie_df['Audience Score'] = pd.to_numeric(movie_df['Audience Score'], errors='coerce').fillna(0).astype(int)
-    movie_df['Critic Score'] = pd.to_numeric(movie_df['Critic Score'], errors='coerce').fillna(0).astype(int)
-    movie_df['Average Score'] = (movie_df['Audience Score'] + movie_df['Critic Score']) / 2
+
 
     movie_df['Release Date (Streaming)'] = pd.to_datetime(movie_df['Release Date (Streaming)'], errors='coerce').fillna(pd.NaT)
     movie_df['Release Date (Theaters)'] = pd.to_datetime(movie_df['Release Date (Theaters)'], errors='coerce').fillna(pd.NaT)

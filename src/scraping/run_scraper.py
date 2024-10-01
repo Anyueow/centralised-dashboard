@@ -42,9 +42,13 @@ def run_scraper_details(movies):
         print("No movies scraped.")
         return None
 
-# Example usage:
-movies = run_scraper()  # Scrape movie titles and URLs
-if movies is not None:
-    movie_df = run_scraper_details(movies)  # Collect movie details
-else:
-    print("No movies scraped")
+# Test Script
+if __name__ == "__main__":
+    movies = run_scraper()  # Scrape movie titles and URLs
+    if movies is not None:
+        movie_df = run_scraper_details(movies)  # Collect movie details
+        if movie_df is not None:
+            print("Scraped Movie DataFrame:")
+            print(movie_df.head())  # Show a sample of the DataFrame
+    else:
+        print("No movies scraped.")
