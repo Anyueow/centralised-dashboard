@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
-from run_scraper import run_scraper, run_scraper_details
-from run_trends import run_trends
-from trend_visualizer import TrendVisualizer
+from src.scraping.run_scraper import run_scraper, run_scraper_details
+from src.trends.run_trends_and_viz import run_trends
+from src.trends.TrendVisualizer import TrendVisualizer
 
 
 # Use Streamlit's caching to avoid re-scraping and re-fetching the same data
+
 @st.cache_data
 def get_movie_data():
     """
@@ -15,19 +16,29 @@ def get_movie_data():
     run_scraper_details(movies)  # Populate details for the movies
     movie_df = pd.DataFrame(movies)
 
-    # Clean and format movie data
+    # Print available columns for debugging
+    st.write("Available columns in movie_df:", movie_df.columns)
+
+    # Check if 'Audience Score' exists in the DataFrame
+    if 'Audience Score' not in movie_df.columns:
+        st.error("Audience Score column is missing. Ensure the scraping process populates this field.")
+        # If missing, create the column with default values (e.g., 0)
+        movie_df['Audience Score'] = 0
+
+    # Ensure 'Audience Score', 'Critic Score', and 'Average Score' are numeric
     movie_df['Audience Score'] = pd.to_numeric(movie_df['Audience Score'], errors='coerce').fillna(0).astype(int)
     movie_df['Critic Score'] = pd.to_numeric(movie_df['Critic Score'], errors='coerce').fillna(0).astype(int)
     movie_df['Average Score'] = (movie_df['Audience Score'] + movie_df['Critic Score']) / 2
-    movie_df['Release Date (Streaming)'] = pd.to_datetime(movie_df['Release Date (Streaming)'], errors='coerce').fillna(
-        pd.NaT)
-    movie_df['Release Date (Theaters)'] = pd.to_datetime(movie_df['Release Date (Theaters)'], errors='coerce').fillna(
-        pd.NaT)
+
+    movie_df['Release Date (Streaming)'] = pd.to_datetime(movie_df['Release Date (Streaming)'], errors='coerce').fillna(pd.NaT)
+    movie_df['Release Date (Theaters)'] = pd.to_datetime(movie_df['Release Date (Theaters)'], errors='coerce').fillna(pd.NaT)
 
     for col in ['Movie Name', 'Director', 'Synopsis', 'Genres']:
         movie_df[col] = movie_df[col].fillna('N/A')
 
     return movie_df
+
+
 
 
 @st.cache_data
