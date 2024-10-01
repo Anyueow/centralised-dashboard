@@ -14,12 +14,20 @@ def main():
     # Fetch movie data (cached)
     movie_df = get_movie_data()
 
-    # Add a search function to search across movie names, actors, genres, and directors
-    search_query = st.text_input("Search by Movie Name, Director, Actor, or Genre", "")
+    # Create columns with a smaller width ratio for side-by-side buttons
+    col1, col2, col3 = st.columns([2, 1, 1])  # Adjust the width ratio
 
-    # Button to expand/collapse all rows
-    expand_all = st.button("Expand All")
-    collapse_all = st.button("Collapse All")
+    # Display search bar in the first column (taking up more space)
+    with col1:
+        search_query = st.text_input("Search by Movie Name, Director, Actor, or Genre", "")
+
+    # Display "Expand All" button in the second column
+    with col2:
+        expand_all = st.button("Expand All")
+
+    # Display "Collapse All" button in the third column
+    with col3:
+        collapse_all = st.button("Collapse All")
 
     # Filter the DataFrame based on the search query
     if search_query:
