@@ -48,6 +48,7 @@ def main():
 
     # Fetch trends for the filtered movies (cached)
     movie_titles = filtered_df['Movie Name'].tolist()
+    print(movie_titles)
     trend_figures = get_trend_data(movie_titles)  # Get the trend figures
 
     # Display movie details and trends
@@ -90,7 +91,7 @@ def display_movies_with_trends(filtered_df, trend_figures, expand_all, collapse_
                 st.markdown(f"**Runtime**: {row['Runtime'] if row['Runtime'] != 'N/A' else 'No runtime available.'}")
 
                 st.markdown(
-                    f"**Sentiment Analysis**: *..........................Upcoming.........................................*")  # Placeholder for future sentiment analysis
+                    f"**Sentiment Analysis**:  {row['Sentiment Analysis'] if row['Sentiment Analysis'] != 'N/A' else 'No Sentiment Analysis available.'}")  # Placeholder for future sentiment
                 st.markdown(f"**Actors**: *...Upcoming...*")  # Placeholder for actors
                 st.markdown(f"**Top Comment**: *...Upcoming...*")  # Placeholder for top comment
 

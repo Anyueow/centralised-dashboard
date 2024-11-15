@@ -1,5 +1,10 @@
+import pandas as pd
+import streamlit as st
+from anthropic import Anthropic
+
 from src.scraping.MovieDataCollector import MovieDataCollector
 from src.scraping.MovieTitleScraper import MovieTitleScraper
+from src.sentiment.x.grok_client import GrokClient
 
 def run_scraper():
     """
@@ -27,12 +32,10 @@ def run_scraper_details(movies):
         movie_collector = MovieDataCollector()
 
         try:
-            print("Collecting movie details...")
             movie_collector.get_movie_data(movies)
             movie_df = movie_collector.to_dataframe()
 
-            # Output the data to console or save it as needed
-            print(movie_df.info())  # Display dataframe information
+
             return movie_df  # Return the dataframe to be used later
 
         except Exception as e:
@@ -42,13 +45,33 @@ def run_scraper_details(movies):
         print("No movies scraped.")
         return None
 
-# Test Script
+
+def add_sentiment_analysis(movie_df):
+    # Initialize the Anthropic client with xAI's base URL
+    api_key = st.secrets["XAI_API_KEY"]
+
+    client = Anthropic(
+        api_key=api_key,
+        base_url="https://api.x.ai",
+    )
+    if client is None:
+        st.stop()  # Stop execution if client initialization fails
+
+    movie_titles = movie_df['Movie Name'].tolist()
+    sentiment_df = GrokClient.process_movies(client, movie_titles)
+
+    enriched_movie_df = pd.merge(movie_df, sentiment_df, on='Movie Name', how='left')
+    return enriched_movie_df
+
+
 if __name__ == "__main__":
-    movies = run_scraper()  # Scrape movie titles and URLs
+    movies = run_scraper()
     if movies is not None:
-        movie_df = run_scraper_details(movies)  # Collect movie details
+        movie_df = run_scraper_details(movies)
         if movie_df is not None:
-            print("Scraped Movie DataFrame:")
-            print(movie_df.head())  # Show a sample of the DataFrame
+
+            enriched_movie_df = add_sentiment_analysis(movie_df)
+            print("Enriched Movie DataFrame:")
+            print(enriched_movie_df.head())
     else:
         print("No movies scraped.")
