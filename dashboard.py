@@ -1,12 +1,132 @@
 import streamlit as st
 import pandas as pd
 
-
+# Import the function to get the movie data
 def get_movie_data():
     from src.scraping.run_scraper import get_movie_data as fetch_movie_data
-
     return fetch_movie_data()
 
+# Import the function to add trending scores
+from add_scores import add_scores  # Assuming you have this function to add the 'Trending Score'
+
+# Custom CSS for styling
+def local_css():
+    st.markdown("""
+        <style>
+            /* Card Container */
+            .card {
+                background-color: #ffffff;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 15px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Header */
+            .header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .header h3 {
+                margin: 0;
+                font-size: 1.5em;
+                color: #333333;
+            }
+
+            /* Trending Score Badge */
+            .badge {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background-color: #4CAF50;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 1em;
+            }
+
+            /* Section Titles */
+            .section-title {
+                font-size: 1.2em;
+                color: #555555;
+                margin-top: 15px;
+                margin-bottom: 5px;
+            }
+
+            /* Recommendations Box */
+            .recommendations {
+                background-color: #f0f0f0;
+                padding: 15px;
+                border-radius: 10px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+
+            /* Ratings List */
+            .ratings-list {
+                list-style-type: none;
+                padding-left: 0;
+            }
+
+            .ratings-list li {
+                padding: 5px 0;
+                border-bottom: 1px solid #e0e0e0;
+            }
+
+            /* Responsive Columns */
+            @media (max-width: 768px) {
+                .columns {
+                    flex-direction: column;
+                }
+
+                .columns > div {
+                    width: 100% !important;
+                }
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+# Apply the custom CSS
+local_css()
+
+# Helper functions
+def render_header(movie_name, trending_score):
+    header_html = f"""
+    <div class="header">
+        <h3>{movie_name}</h3>
+        <div class="badge">{trending_score}</div>
+    </div>
+    """
+    st.markdown(header_html, unsafe_allow_html=True)
+
+def render_section(title, content):
+    section_html = f"""
+    <div>
+        <div class="section-title"><strong>{title}</strong></div>
+        <div>{content}</div>
+    </div>
+    """
+    st.markdown(section_html, unsafe_allow_html=True)
+
+def render_ratings(ratings):
+    ratings_html = '<ul class="ratings-list">'
+    for key, value in ratings.items():
+        ratings_html += f"<li><strong>{key}:</strong> {value}</li>"
+    ratings_html += '</ul>'
+    st.markdown(ratings_html, unsafe_allow_html=True)
+
+def render_recommendations(seo_keywords, trend_recommendation):
+    recommendations_html = f"""
+    <div class="recommendations">
+        <p><strong>SEO Keywords:</strong> {seo_keywords}<br>
+        <strong>Trend Recommendation:</strong> {trend_recommendation}</p>
+    </div>
+    """
+    st.markdown(recommendations_html, unsafe_allow_html=True)
 
 def main():
     # Set page layout for the Streamlit app
@@ -21,15 +141,22 @@ def main():
         st.error(f"Error loading movie data: {e}")
         return
 
-    # Search functionality
+    # Calculate and add 'Trending Score'
+    movie_df = add_scores(movie_df)
+
+    # Optional: Search functionality
     search_query = st.text_input("Search by Movie Name, Director, Actor, or Genre", "")
 
     # Sorting option
     sort_option = st.selectbox("Sort movies by:", ["Movie Name", "Trending Score"])
     if sort_option == "Trending Score":
-        movie_df = movie_df.sort_values(by='Trending Score', ascending=False)
+        movie_df['Trending Score Numeric'] = pd.to_numeric(movie_df['Trending Score'], errors='coerce')
+        movie_df = movie_df.sort_values(by='Trending Score Numeric', ascending=False)
     else:
         movie_df = movie_df.sort_values(by='Movie Name')
+
+    # Remove the temporary 'Trending Score Numeric' column
+    movie_df = movie_df.drop(columns=['Trending Score Numeric'], errors='ignore')
 
     # Create columns for expand/collapse buttons
     col2, col3, cc = st.columns([0.5, 0.5, 5])
@@ -56,7 +183,6 @@ def main():
     # Display movies
     display_movies(filtered_df, expand_all, collapse_all)
 
-
 def display_movies(filtered_df, expand_all, collapse_all):
     """
     Display movie information with expandable sections.
@@ -66,60 +192,47 @@ def display_movies(filtered_df, expand_all, collapse_all):
 
     for i, (index, row) in enumerate(filtered_df.iterrows(), 1):
         with st.expander(f"{i}. {row['Movie Name']}", expanded=expand_state):
-            col1, col2 = st.columns([2, 3])
+            # Create two equal-width columns
+            col1, col2 = st.columns([3, 3])
 
             with col1:
-                # Movie name and trending score
-                movie_header_html = f"""
-                <div style="display: flex; align-items: center;">
-                    <h3 style="margin: 0;">{row['Movie Name']}</h3>
-                    <div style="width: 50px; height: 50px; border-radius: 50%; background-color: #4CAF50; color: white; display: flex; align-items: center; justify-content: center; margin-left: 10px;">
-                        <span>{row.get('Trending Score', 'N/A')}</span>
-                    </div>
-                </div>
-                """
-                st.markdown(movie_header_html, unsafe_allow_html=True)
+                # Render Header
+                trending_score = row.get('Trending Score', 'N/A')
+                render_header(row['Movie Name'], trending_score)
 
-                # Basic movie details
-                st.markdown(f"**Director**: {row.get('Director', 'N/A')}")
-                st.markdown(f"**Actors**: {row.get('Actors', 'N/A')}")
-                st.markdown(f"**Genres**: {row.get('Genres', 'N/A')}")
+                # Render Director, Actors, Genres
+                render_section("Director", row.get('Director', 'N/A'))
+                render_section("Actors", row.get('Actors', 'N/A'))
+                render_section("Genres", row.get('Genres', 'N/A'))
 
-                # Synopsis
-                st.markdown(f"**Synopsis**: {row.get('Synopsis', 'No synopsis available.')}")
+                # Render Synopsis
+                render_section("Synopsis", row.get('Synopsis', 'No synopsis available.'))
 
-                # Ratings
-                st.markdown("**Ratings:**")
-                st.markdown(f"- **IMDb Rating**: {row.get('IMDb Rating', 'N/A')}")
-                st.markdown(f"- **Rotten Tomatoes**: {row.get('Rotten Tomatoes Rating', 'N/A')}")
-                st.markdown(f"- **Metacritic**: {row.get('Metacritic Rating', 'N/A')}")
-                st.markdown(f"- **Metascore**: {row.get('Metascore', 'N/A')}")
-                st.markdown(f"- **IMDb Votes**: {row.get('IMDb Votes', 'N/A')}")
+                # Render Ratings
+                st.markdown("**Ratings:**", unsafe_allow_html=True)
+                ratings = {
+                    'IMDb Rating': row.get('IMDb Rating', 'N/A'),
+                    'Rotten Tomatoes': row.get('Rotten Tomatoes Rating', 'N/A'),
+                    'Metacritic': row.get('Metacritic Rating', 'N/A'),
+                    'Metascore': row.get('Metascore', 'N/A'),
+                    'IMDb Votes': row.get('IMDb Votes', 'N/A')
+                }
+                render_ratings(ratings)
 
-                # Release Dates
-                st.markdown(f"**Theater Release Date**: {row.get('Release Date (Theaters)', 'N/A')}")
-                st.markdown(f"**Streaming Release Date**: {row.get('Release Date (Streaming)', 'N/A')}")
-
-                # Runtime
-                st.markdown(f"**Runtime**: {row.get('Runtime', 'N/A')}")
+                # Render Release Dates and Runtime
+                render_section("Theater Release Date", row.get('Release Date (Theaters)', 'N/A'))
+                render_section("Streaming Release Date", row.get('Release Date (Streaming)', 'N/A'))
+                render_section("Runtime", row.get('Runtime', 'N/A'))
 
             with col2:
-                # Sentiment Analysis
-                st.markdown("**Sentiment Analysis:**")
-                sentiment = row.get('Sentiment Analysis', 'No analysis available')
-                st.markdown(f"{sentiment}")
+                # Render Sentiment Analysis
+                render_section("Sentiment Analysis", row.get('Sentiment Analysis', 'No analysis available'))
 
-            # SEO and Trend Recommendation
-            st.markdown(
-                """
-                <div style='background-color: #f0f0f0; padding: 10px; margin-top: 20px;'>
-                    <p><strong>SEO Keywords:</strong> Recommended keywords for promotion<br>
-                    <strong>Trend Recommendation:</strong> Potential peak audience engagement period</p>
-                </div>
-                """, unsafe_allow_html=True
+            # Render SEO and Trend Recommendations
+            render_recommendations(
+                row.get('SEO Keywords', 'Recommended keywords for promotion'),
+                row.get('Trend Recommendation', 'Potential peak audience engagement period')
             )
 
-
-# Run the app
 if __name__ == "__main__":
     main()
