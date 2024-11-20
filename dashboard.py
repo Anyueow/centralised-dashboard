@@ -6,8 +6,6 @@ def get_movie_data():
     from src.scraping.run_scraper import get_movie_data as fetch_movie_data
     return fetch_movie_data()
 
-# Import the function to add trending scores
-from add_scores import add_scores  # Assuming you have this function to add the 'Trending Score'
 
 # Custom CSS for styling
 def local_css():
