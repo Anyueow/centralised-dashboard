@@ -37,30 +37,6 @@ def local_css():
                 margin-bottom: 40px;
             }
 
-            /* Expander Header */
-            .expander-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                color: #2E3A59;
-            }
-
-            /* Trending Score Badge */
-            .badge {
-                width: 60px;
-                height: 60px;
-                border-radius: 50%;
-                background-color: #4CAF50;
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: bold;
-                font-size: 1.2em;
-                margin-left: 10px;
-            }
-
             /* Section Titles */
             .section-title {
                 font-size: 1.1em;
@@ -139,15 +115,6 @@ local_css()
 # Helper Functions for Reusable Components
 # ============================================
 
-def render_header(movie_name, trending_score):
-    header_html = f"""
-    <div class="expander-header">
-        <h3>{movie_name}</h3>
-        <div class="badge">{trending_score}</div>
-    </div>
-    """
-    st.markdown(header_html, unsafe_allow_html=True)
-
 def render_section(title, content):
     section_html = f"""
     <div>
@@ -177,6 +144,7 @@ def render_recommendations(seo_keywords, trend_recommendation):
 # Data Fetching Function
 # ============================================
 
+@st.cache_data
 def get_movie_data():
     from src.scraping.run_scraper import get_movie_data as fetch_movie_data
     return fetch_movie_data()
@@ -224,12 +192,13 @@ def main():
 
     # Filter the DataFrame based on the search query
     if search_query:
+        search_query_lower = search_query.lower()
         filtered_df = movie_df[
             movie_df.apply(lambda row:
-                           search_query.lower() in str(row['Movie Name']).lower() or
-                           search_query.lower() in str(row.get('Director', '')).lower() or
-                           search_query.lower() in str(row.get('Genres', '')).lower() or
-                           search_query.lower() in str(row.get('Actors', '')).lower(),
+                           search_query_lower in str(row['Movie Name']).lower() or
+                           search_query_lower in str(row.get('Director', '')).lower() or
+                           search_query_lower in str(row.get('Genres', '')).lower() or
+                           search_query_lower in str(row.get('Actors', '')).lower(),
                            axis=1)
         ]
     else:
@@ -247,25 +216,26 @@ def display_movies(filtered_df, expand_all):
     Display movie information with expandable sections.
     """
     for i, (index, row) in enumerate(filtered_df.iterrows(), 1):
-        with st.expander(f"{i}. {row.get('Movie Name', 'N/A')}", expanded=expand_all):
+        # Fetch Trend Score
+        trend_score = row.get('Trending Score', 'N/A')
+
+        # Add green circle emoji and trend score to the expander label
+        # Using emoji and text to simulate a green bubble with trend score
+        expander_label = f"**{row.get('Movie Name', 'N/A')}** 🟢 {trend_score}"
+
+        with st.expander(expander_label, expanded=expand_all):
             col1, col2 = st.columns([3, 3])
 
             with col1:
-                # Render Header
-                render_header(
-                    row.get('Movie Name', 'N/A'),
-                    row.get('Trending Score', 'N/A')
-                )
-
-                # Render Director, Actors, Genres
+                # Director, Actors, Genres
                 render_section("Director", row.get('Director', 'N/A'))
                 render_section("Actors", row.get('Actors', 'N/A'))
                 render_section("Genres", row.get('Genres', 'N/A'))
 
-                # Render Synopsis
+                # Synopsis
                 render_section("Synopsis", row.get('Synopsis', 'No synopsis available.'))
 
-                # Render Ratings
+                # Ratings
                 st.markdown("<div class='section-title'>Ratings:</div>", unsafe_allow_html=True)
                 ratings = {
                     'IMDb Rating': row.get('IMDb Rating', 'N/A'),
@@ -276,16 +246,16 @@ def display_movies(filtered_df, expand_all):
                 }
                 render_ratings(ratings)
 
-                # Render Release Dates and Runtime
+                # Release Dates and Runtime
                 render_section("Theater Release Date", row.get('Release Date (Theaters)', 'N/A'))
                 render_section("Streaming Release Date", row.get('Release Date (Streaming)', 'N/A'))
                 render_section("Runtime", row.get('Runtime', 'N/A'))
 
             with col2:
-                # Render Sentiment Analysis
+                # Sentiment Analysis
                 render_section("Sentiment Analysis", row.get('Sentiment Analysis', 'No analysis available'))
 
-            # Render SEO and Trend Recommendations
+            # SEO and Trend Recommendation
             render_recommendations(
                 row.get('SEO Keywords', 'N/A'),
                 row.get('Trend Recommendation', 'N/A')
