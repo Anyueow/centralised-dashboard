@@ -33,7 +33,7 @@ class GrokClient:
         """
         prompt = (
            f"What are users on X saying about the movie '{movie_title}' and its main actor"
-           f" '{actor_name}' right now? Please provide a sentiment overview."
+           f" '{actor_name}' right now? Please provide just the sentiment overview, no fluffy introduction"
 
         )
         response = client.completions.create(
