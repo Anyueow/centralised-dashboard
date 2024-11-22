@@ -26,13 +26,13 @@ def local_css():
                 color: #2E3A59;
                 font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
                 font-weight: bold;
-                text-align: center;
+                text-align: left;
                 margin-bottom: 20px;
             }
 
             /* Subtitle Styling */
             .subtitle {
-                text-align: center;
+                text-align: left;
                 color: #555555;
                 margin-bottom: 40px;
             }
@@ -176,7 +176,7 @@ def main():
         movie_df = movie_df.sort_values(by='Movie Name')
 
     # Create columns for expand/collapse buttons
-    col2, col3, cc = st.columns([0.5, 0.5, 5])
+    col2, col3, cc = st.columns([1, 1, 5])
 
     # Expand/Collapse buttons
     with col2:

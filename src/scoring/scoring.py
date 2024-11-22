@@ -103,9 +103,9 @@ class MovieScorer:
         # Calculate weighted trending score
         components = [
             (ratings['IMDb'], 0.25),
-            (ratings['Rotten Tomatoes'], 0.25),
+            (ratings['Rotten Tomatoes'], 0.30),
             (ratings['Metacritic'], 0.15),
-            (ratings['IMDb Votes'], 0.25),
+            (ratings['IMDb Votes'], 0.20),
             (ratings['Metascore'], 0.10),
         ]
 
