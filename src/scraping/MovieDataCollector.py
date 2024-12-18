@@ -1,3 +1,6 @@
+import datetime
+from datetime import datetime
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -61,17 +64,64 @@ class MovieDataCollector:
         except AttributeError:
             return "N/A"
 
+
+
     def get_release_theatre(self, soup):
         try:
-            return soup.find('rt-text', text='Release Date (Theaters)').find_next('rt-text').get_text(strip=True)
+            date_str = soup.find('rt-text', text='Release Date (Theaters)').find_next('rt-text').get_text(strip=True)
         except AttributeError:
-            return "N/A"
+            date_str = "N/A"
+
+        if date_str == "N/A":
+            return None
+
+        # Split by comma and only take the first two segments to remove extra text
+        # For example: "Jul 19, 2024, Wide" -> "Jul 19, 2024"
+        parts = date_str.split(',')
+        if len(parts) >= 2:
+            date_str = (parts[0] + "," + parts[1]).strip()
+        else:
+            # If not enough parts, just use the original string
+            # Though this likely means the date is incomplete
+            pass
+
+        # Try full month name
+        try:
+            dt = datetime.strptime(date_str, "%B %d, %Y")
+            return dt.date()  # Store as a date object
+        except ValueError:
+            pass
+
+        # Try abbreviated month name
+        try:
+            dt = datetime.strptime(date_str, "%b %d, %Y")
+            return dt.date()  # Store as a date object
+        except ValueError:
+            return None
 
     def get_release_streaming(self, soup):
         try:
-            return soup.find('rt-text', text='Release Date (Streaming)').find_next('rt-text').get_text(strip=True)
+            date_str = soup.find('rt-text', text='Release Date (Streaming)').find_next('rt-text').get_text(
+                strip=True)
         except AttributeError:
-            return "N/A"
+            date_str = "N/A"
+
+        if date_str == "N/A":
+            return None
+
+        # Try full month name
+        try:
+            dt = datetime.strptime(date_str, "%B %d, %Y")
+            return dt.date()  # Store as a date object
+        except ValueError:
+            pass
+
+        # Try abbreviated month name
+        try:
+            dt = datetime.strptime(date_str, "%b %d, %Y")
+            return dt.date()  # Store as a date object
+        except ValueError:
+            return None
 
     def get_runtime(self, soup):
         try:
@@ -95,3 +145,4 @@ class MovieDataCollector:
     def to_dataframe(self):
         print(f"Collected movie data: {self.movie_data}")  # For debugging
         return pd.DataFrame(self.movie_data)
+

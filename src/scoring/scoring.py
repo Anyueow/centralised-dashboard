@@ -87,40 +87,66 @@ class MovieScorer:
 
         return ratings
 
-    def calculate_trend_score(self, row):
-        """
-        Calculates the trending score for a single row in the movie DataFrame.
 
-        Weights:
-        - IMDb Rating (25%)
-        - Rotten Tomatoes Rating (25%)
-        - Metacritic Rating (15%)
-        - IMDb Votes (25%)
-        - Metascore (10%)
-        """
+    def calculate_trend_score(self, row):
         ratings = self.process_ratings(row)
 
-        # Calculate weighted trending score
-        components = [
-            (ratings['IMDb'], 0.25),
-            (ratings['Rotten Tomatoes'], 0.30),
-            (ratings['Metacritic'], 0.15),
-            (ratings['IMDb Votes'], 0.20),
-            (ratings['Metascore'], 0.10),
-        ]
+        base_weights = {
+            'IMDb': 0.35,
+            'Rotten Tomatoes': 0.40,
+            'Metacritic': 0.15,
+            'IMDb Votes': 0.02,
+            'Metascore': 0.10
+        }
+
+        # Fallback values in their native scales:
+        # IMDb: 0–10, missing -> 10
+        # Rotten Tomatoes: 0–100, missing -> 100
+        # Metacritic: 0–100, missing -> 100
+        # IMDb Votes: 0–100 (our normalized scale), missing -> 100
+        # Metascore: 0–100, missing -> 100
+        fallback_values = {
+            'IMDb': 10.0,
+            'Rotten Tomatoes': 100.0,
+            'Metacritic': 100.0,
+            'IMDb Votes': 100.0,
+            'Metascore': 100.0
+        }
+
+        # Replace missing ratings
+        for key in base_weights.keys():
+            if pd.isna(ratings[key]):
+                ratings[key] = fallback_values[key]
+
+        # After process_ratings, all should be in 0–100 except IMDb which was normalized from 0–10 to 0–100
+        # Actually check if IMDb is scaled to 0–100 in process_ratings. If not, do it there.
+        # Assuming IMDb now also 0–100 after normalization.
+
+        # No extra scaling for Rotten Tomatoes here!
+        # Just use them directly as all are now in 0–100 scale.
+
+        available_ratings = {}
+        available_weights = {}
+
+        for key, weight in base_weights.items():
+            score = ratings[key]  # Already 0–100
+            available_ratings[key] = score
+            available_weights[key] = weight
+
+        if not available_weights:
+            return np.nan
+
+        weight_sum = sum(available_weights.values())
+        scaling_factor = 1.0 / weight_sum
 
         total_score = 0
-        total_weight = 0
-        for score, weight in components:
-            if not pd.isna(score):
-                total_score += score * weight
-                total_weight += weight
+        for key, score in available_ratings.items():
+            scaled_weight = available_weights[key] * scaling_factor
+            # Convert all scores to 0–1 scale here for final calculation, if needed:
+            # score / 100.0 if you want a final 0–1 scale mix
+            total_score += (score / 100.0) * scaled_weight
 
-        if total_weight > 0:
-            trending_score = total_score / total_weight
-            return round(trending_score, 2)
-        else:
-            return np.nan
+        return round(total_score * 100, 1)  # If you want a final 0–100 scale score.
 
     def score_movies(self, movie_df):
         """

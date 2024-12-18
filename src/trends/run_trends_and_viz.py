@@ -24,3 +24,14 @@ def run_trends(movie_titles):
     except Exception as e:
         print(f"Error fetching Google Trends data: {e}")
         return None
+
+
+if __name__ == "__main__":
+    # Example movie titles to test the functionality
+    test_movies = ["The Shawshank Redemption", "The Godfather", "The Dark Knight"]
+    result = run_trends(test_movies)
+
+    if result is not None:
+        print("Trend visualization figures generated successfully.")
+    else:
+        print("No figures generated or an error occurred.")

@@ -1,15 +1,11 @@
 import streamlit as st
 import pandas as pd
 
-
 def get_movie_data():
     from src.scraping.run_scraper import get_movie_data as fetch_movie_data
-
     return fetch_movie_data()
 
-
 def main():
-    # Set page layout for the Streamlit app
     st.set_page_config(layout="wide")
     st.title("Direct TV SEO Movie Research Dashboard")
     st.markdown("View movie details and insights.")
@@ -53,7 +49,6 @@ def main():
     else:
         filtered_df = movie_df
 
-    # Display movies
     display_movies(filtered_df, expand_all, collapse_all)
 
 
@@ -107,28 +102,16 @@ def display_movies(filtered_df, expand_all, collapse_all):
                 # Sentiment Analysis
                 st.markdown("**Sentiment Analysis:**")
                 sentiment = row.get('Sentiment Analysis', 'No analysis available')
-                st.markdown(f"{sentiment}")
+                st.markdown(sentiment)
 
-            # SEO and Trend Recommendation
-            st.markdown(
-                        """
-                        <div style="
-            background-color: #f0f0f0; 
-            padding: 10px; 
-            margin-top: 20px; 
-            margin-bottom: 20px; 
-            border-radius: 10px; /* Adds rounded corners */
-        ">
-            <p>
-                <strong>SEO Keywords:</strong> Recommended keywords for promotion<br>
-                <strong>Trend Recommendation:</strong> Potential peak audience engagement period
-            </p>
-        </div>
+                # SEO Keywords
 
-                """, unsafe_allow_html=True
-            )
+                st.markdown("**SEO Keywords:**")
+                seo_keywords = row.get('SEO Keywords')
+                for keyword in seo_keywords:
+                    st.write(f"- {keyword}")
 
 
-# Run the app
+
 if __name__ == "__main__":
     main()

@@ -2,67 +2,33 @@ import os
 import pandas as pd
 import streamlit as st
 from anthropic import Anthropic
-from datetime import datetime, timedelta
+from datetime import datetime
 
+import constants
 from src.scoring.add_scores import add_scores
 from src.scraping.MovieDataCollector import MovieDataCollector
 from src.scraping.MovieTitleScraper import MovieTitleScraper
 from src.sentiment.x.grok_client import GrokClient
 from src.scraping.omdb_api import MovieDetailsFetcher
+from src.seo.seofinder import SEOKeywordService
 
 
 class MovieDataProcessor:
-    def __init__(self, cache_dir='./data_cache'):
+    def __init__(self):
         """
-        Initialize the movie data processor with caching mechanism
+        Initialize the movie data processor without any caching mechanism.
         """
-        self.cache_dir = cache_dir
-        os.makedirs(cache_dir, exist_ok=True)
-        self.cache_file = os.path.join(cache_dir, 'movie_data_cache.pkl')
-
-    def _is_cache_valid(self):
-        """
-        Check if the cached data is from today
-        """
-        if not os.path.exists(self.cache_file):
-            return False
-
-        # Get file modification time
-        mod_time = datetime.fromtimestamp(os.path.getmtime(self.cache_file))
-        return mod_time.date() == datetime.now().date()
-
-    def _save_cache(self, dataframe):
-        """
-        Save the dataframe to a pickle file
-        """
-        dataframe.to_pickle(self.cache_file)
-
-    def _load_cache(self):
-        """
-        Load the cached dataframe
-        """
-        return pd.read_pickle(self.cache_file)
+        pass
 
     def get_movie_data(self):
         """
-        Get movie data, using cache if available or scraping fresh data
+        Get fresh movie data by scraping and processing every time.
         """
-        # Check if cache exists and is valid
-        if self._is_cache_valid():
-            return self._load_cache()
-
-        # Scrape new data
         movies = self._scrape_movie_titles()
         if not movies:
-            # If scraping fails and no cache, raise an error
-            raise ValueError("Could not scrape movie data and no cache available")
+            raise ValueError("Could not scrape movie data.")
 
-        # Collect and enrich movie data
         movie_df = self._collect_movie_details(movies)
-
-        # Save to cache for future use
-        self._save_cache(movie_df)
-
         return movie_df
 
     def _scrape_movie_titles(self):
@@ -79,6 +45,8 @@ class MovieDataProcessor:
             print(f"Error scraping movie titles: {e}")
             return None
 
+
+    # updating df
     def _collect_movie_details(self, movies):
         """
         Comprehensive method to collect and enrich movie details
@@ -97,48 +65,52 @@ class MovieDataProcessor:
         # Add trending scores
         movie_df = add_scores(movie_df)
 
+        # Extract movie titles once, reuse for sentiment and SEO
+        movie_titles = movie_df['Movie Name'].tolist()
+
         # Add sentiment analysis
-        movie_df = self._add_sentiment_analysis(movie_df)
+        movie_df = self._add_sentiment_analysis(movie_df, movie_titles)
+
+        # Add SEO Keywords
+        movie_df = self._add_seo_keywords(movie_df, movie_titles)
+
 
         return movie_df
 
     def _add_movie_details(self, movie_df):
         """
-        Add detailed movie information from OMDb
+        Add detailed movie information from OMDb, including ratings, actors, awards, and poster.
         """
         fetcher = MovieDetailsFetcher()
         details_columns = [
-            'IMDb Rating', 'Rotten Tomatoes Rating',
-            'Metacritic Rating', 'Metascore',
-            'IMDb Votes', 'Actors'
+            'IMDb Rating', 'Rotten Tomatoes Rating', 'Metacritic Rating', 'Metascore',
+            'IMDb Votes', 'Actors', 'Awards', 'Poster'
         ]
 
-        # Vectorized approach to fetch movie details
         def fetch_movie_details(movie_name):
             details = fetcher.get_movie_details(movie_name)
             if details:
                 ratings = details.get('Ratings', {})
                 return {
-                    'IMDb Rating': ratings.get('imdbRating', 'N/A'),
+                    'IMDb Rating': ratings.get('IMDb Rating', 'N/A'),
                     'Rotten Tomatoes Rating': ratings.get('Rotten Tomatoes', 'N/A'),
                     'Metacritic Rating': ratings.get('Metacritic', 'N/A'),
                     'Metascore': ratings.get('Metascore', 'N/A'),
-                    'IMDb Votes': ratings.get('imdbVotes', 'N/A'),
-                    'Actors': ', '.join(details.get('Actors', []))
+                    'IMDb Votes': ratings.get('IMDb Votes', 'N/A'),
+                    'Actors': ', '.join(details.get('Actors', [])),
+                    'Awards': details.get('Awards', 'N/A'),
+                    'Poster': details.get('Poster', 'N/A')  # Poster is the image URL
                 }
             return {col: 'N/A' for col in details_columns}
 
-        # Apply details fetching
+        # Apply the fetch_movie_details function to each movie and expand the results into a DataFrame
         details_df = movie_df['Movie Name'].apply(fetch_movie_details).apply(pd.Series)
-
-        # Combine original dataframe with new details
         return pd.concat([movie_df, details_df], axis=1)
 
-    def _add_sentiment_analysis(self, movie_df):
+    def _add_sentiment_analysis(self, movie_df, movie_titles):
         """
         Add sentiment analysis using Anthropic's Grok
         """
-        # Initialize the Anthropic client with xAI's base URL
         api_key = st.secrets["XAI_API_KEY"]
         client = Anthropic(
             api_key=api_key,
@@ -148,11 +120,37 @@ class MovieDataProcessor:
         if client is None:
             raise ValueError("Failed to initialize Anthropic client")
 
-        movie_titles = movie_df['Movie Name'].tolist()
         sentiment_df = GrokClient.process_movies(client, movie_titles)
-
-        # Merge sentiment data
         return pd.merge(movie_df, sentiment_df, on='Movie Name', how='left')
+
+    def _add_seo_keywords(self, movie_df, movie_titles):
+        """
+        Add SEO Keywords to the movie DataFrame
+        """
+        serpapi_key = constants.SERPAPI
+        seo_service = SEOKeywordService(api_key=serpapi_key)
+
+        try:
+            keywords_dict = seo_service.get_keywords_for_movies(movie_titles, num_keywords=4)
+
+            # Convert keywords list to comma-separated string
+            processed_keywords = {
+                movie: ', '.join(keywords) for movie, keywords in keywords_dict.items()
+            }
+
+            # Create SEO Keywords DataFrame
+            seo_df = pd.DataFrame.from_dict(processed_keywords, orient='index', columns=['SEO Keywords'])
+            seo_df.index.name = 'Movie Name'
+            seo_df.reset_index(inplace=True)
+
+            # Merge with original DataFrame
+            merged_df = movie_df.merge(seo_df, on='Movie Name', how='left')
+            return merged_df
+
+        except Exception as e:
+            print(f"Error in SEO Keyword Processing: {e}")
+            return movie_df
+
 
 
 def get_movie_data():

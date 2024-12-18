@@ -1,7 +1,6 @@
 import random
 import streamlit as st
 import requests
-import os
 
 
 class MovieDetailsFetcher:
@@ -48,7 +47,7 @@ class MovieDetailsFetcher:
                 value = rating.get('Value')
                 ratings[source] = value
 
-            # Extract Metascore and imdbRating
+            # Extract Metascore, IMDb Rating, and IMDb Votes
             metascore = data.get('Metascore', 'N/A')
             imdb_rating = data.get('imdbRating', 'N/A')
             imdb_votes = data.get('imdbVotes', 'N/A')
@@ -57,25 +56,30 @@ class MovieDetailsFetcher:
             actors = data.get('Actors', '')
             actor_list = [actor.strip() for actor in actors.split(',')] if actors else []
 
+            # Extract Awards and Poster
+            awards = data.get('Awards', 'N/A')
+            poster = data.get('Poster', 'N/A')
+
             # Combine all ratings into a single dictionary
             all_ratings = {
-                "Internet Movie Database": ratings.get('Internet Movie Database', 'N/A'),
                 "Rotten Tomatoes": ratings.get('Rotten Tomatoes', 'N/A'),
                 "Metacritic": ratings.get('Metacritic', 'N/A'),
                 "Metascore": metascore,
-                "imdbRating": imdb_rating,
-                "imdbVotes": imdb_votes,
+                "IMDb Rating": imdb_rating,
+                "IMDb Votes": imdb_votes,
             }
 
             return {
-
+                "Title": movie_name,
                 "Ratings": all_ratings,
                 "Actors": actor_list,
-
+                "Awards": awards,
+                "Poster": poster,
             }
         else:
             print(f"Error: {data.get('Error')}")
             return None
+
 
 if __name__ == "__main__":
     # List of random movies
@@ -91,7 +95,7 @@ if __name__ == "__main__":
         "Forrest Gump",
         "The Lord of the Rings: The Return of the King",
         "Guardians of the Galaxy Vol. 2",
-        "The Substance"  # As per your earlier example
+        "The Substance"  # Example movie
     ]
 
     # Select a random movie
@@ -111,12 +115,14 @@ if __name__ == "__main__":
     # Check if details were fetched successfully
     if details:
         print("\nMovie Details:")
-        print(f"Title: {random_movie}")
+        print(f"Title: {details['Title']}")
         print("\nRatings:")
         for source, rating in details['Ratings'].items():
             print(f"  {source}: {rating}")
         print("\nActors:")
         for actor in details['Actors']:
             print(f"  {actor}")
+        print(f"\nAwards: {details['Awards']}")
+        print(f"Poster: {details['Poster']}")
     else:
         print("Movie details could not be retrieved.")
