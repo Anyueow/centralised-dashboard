@@ -162,8 +162,7 @@ def display_movies(filtered_df, expand_all):
                 render_section("Streaming Release Date", streaming_date_str)
 
                 render_section("Runtime", row.get('Runtime', 'N/A'))
-                # Synopsis
-                render_section("Synopsis", row.get('Synopsis', 'No synopsis available.'))
+
                 # Awards
                 render_section("Awards", row.get('Awards', 'No awards available.'))
 
