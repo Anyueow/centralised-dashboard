@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from datetime import datetime
 
 class CacheManager:
     def __init__(self, cache_dir='./data_cache'):
@@ -10,13 +9,9 @@ class CacheManager:
 
     def is_cache_valid(self):
         """
-        Check if the cached data is from today
+        Check if the cache exists
         """
-        if not os.path.exists(self.cache_file):
-            return False
-
-        mod_time = datetime.fromtimestamp(os.path.getmtime(self.cache_file))
-        return mod_time.date() == datetime.now().date()
+        return os.path.exists(self.cache_file)
 
     def save_cache(self, dataframe):
         """
