@@ -221,7 +221,7 @@ def display_movies(filtered_df, expand_all):
 # Main Function
 # ============================================
 def main():
-    st.markdown('<h1 class="title">Direct TV SEO Movie Research Dashboard</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="title">DIRECTV SEO Movie Research Dashboard</h1>', unsafe_allow_html=True)
     st.markdown("<p class='subtitle'>Trending Top movies, sources: Rotten Tomatoes, IMDB, Google, Wikipedia, Twitter.</p>", unsafe_allow_html=True)
 
     # Initialize CacheManager
